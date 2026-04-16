@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background:#f4f6f9;
+}
+
+h2 {
+  text-align:center;
+  margin-top:20px;
+}
+
+/* SAME UI AS TEACHER */
+.main {
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  margin-top:30px;
+}
+
+.leftCard {
+  width:280px;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.rightCard {
+  width:300px;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+input, select {
+  width:100%;
+  padding:8px;
+  margin:8px 0;
+  border:1px solid #ccc;
+  border-radius:5px;
+}
+
+button {
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#4e73df;
+  color:white;
+  cursor:pointer;
+}
+
+canvas {
+  width:260px !important;
+  height:220px !important;
+  display:block;
+  margin:auto;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Student Dashboard</h2>
+
+<div class="main">
+
+<!-- LEFT SIDE -->
+<div class="leftCard">
+
+<input id="roll" placeholder="Enter Roll No">
+
+<select id="dataType">
+  <option value="marks">Marks</option>
+  <option value="attendance">Attendance</option>
+</select>
+
+<select id="chartType">
+  <option value="bar">Bar Graph</option>
+  <option value="pie">Pie Chart</option>
+</select>
+
+<button onclick="loadChart()">Generate Chart</button>
+
+</div>
+
+<!-- RIGHT SIDE -->
+<div class="rightCard">
+  <canvas id="chart"></canvas>
+</div>
+
+</div>
+
+<script>
+
+let chartObj;
+
+function loadChart(){
+
+fetch("http://localhost:5000/student/" + roll.value)
+.then(res=>res.text())
+.then(text=>{
+
+if(text==="No data found"){
+  alert("No data found");
+  return;
+}
+
+const data = JSON.parse(text);
+
+let labels = [];
+let values = [];
+
+if(dataType.value === "marks"){
+
+  labels = data.data.subjects.map(s => s.name);
+  values = data.data.subjects.map(s => s.mark);
+
+}
+else{
+
+  // ATTENDANCE %
+  labels = data.data.attendance.map(a => a.name);
+  values = data.data.attendance.map(a => 
+    ((a.attended / a.total) * 100).toFixed(1)
+  );
+
+}
+
+if(chartObj) chartObj.destroy();
+
+chartObj = new Chart(document.getElementById("chart"), {
+  type: chartType.value,
+  data: {
+    labels: labels,
+    datasets: [{
+      label: dataType.value.toUpperCase(),
+      data: values,
+      backgroundColor: [
+        "#4e73df","#1cc88a","#36b9cc",
+        "#f6c23e","#e74a3b","#858796"
+      ]
+    }]
+  },
+  options: {
+    responsive:false,
+    plugins: {
+
+      // TOOLTIP %
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ctx.raw + "%"
+        }
+      },
+
+      // PIE CHART LABELS %
+      datalabels: {
+        color: "#fff",
+        font: {
+          weight: "bold",
+          size: 14
+        },
+        formatter: (value) => value + "%"
+      }
+
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
+});
+
+}
+
+</script>
+
+</body>
+</html>

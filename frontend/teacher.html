@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Teacher Dashboard</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background:#f4f6f9;
+}
+
+h2 {
+  text-align:center;
+  margin-top:20px;
+}
+
+/* MAIN LAYOUT */
+.main {
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  margin-top:30px;
+}
+
+/* LEFT FORM */
+.leftCard {
+  width:280px;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* RIGHT FIELDS */
+.rightCard {
+  width:300px;
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  max-height:500px;
+  overflow-y:auto;
+}
+
+label {
+  font-weight:600;
+}
+
+input, select {
+  width:100%;
+  padding:8px;
+  margin:8px 0;
+  border:1px solid #ccc;
+  border-radius:5px;
+}
+
+/* BUTTONS */
+.btn {
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+}
+
+.generateBtn {
+  background:#28a745;
+}
+
+.submitBtn {
+  background:#28a745;
+  margin-top:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Teacher Dashboard</h2>
+
+<div class="main">
+
+<!-- LEFT SIDE -->
+<div class="leftCard">
+
+<label>Select Action</label>
+<select id="action" onchange="handleAction()">
+  <option value="">Select</option>
+  <option value="marks">Enter Marks</option>
+  <option value="attendance">Enter Attendance</option>
+</select>
+
+<input id="roll" placeholder="Roll No">
+<input id="semester" placeholder="Semester">
+
+<!-- MARKS -->
+<div id="marksBox" style="display:none;">
+  <input id="numSubjects" placeholder="No. of Subjects">
+  <button class="btn generateBtn" onclick="generateMarks()">Generate Fields</button>
+</div>
+
+<!-- ATTENDANCE -->
+<div id="attBox" style="display:none;">
+  <input id="numAtt" placeholder="No. of Subjects">
+  <button class="btn generateBtn" onclick="generateAttendance()">Generate Fields</button>
+</div>
+
+<button class="btn submitBtn" onclick="submitData()">Submit</button>
+
+</div>
+
+<!-- RIGHT SIDE -->
+<div class="rightCard" id="fieldsArea">
+</div>
+
+</div>
+
+<script>
+
+let subjects = [];
+let attendance = [];
+
+// SELECT ACTION
+function handleAction(){
+  fieldsArea.innerHTML="";
+  subjects=[]; 
+  attendance=[];
+
+  if(action.value==="marks"){
+    marksBox.style.display="block";
+    attBox.style.display="none";
+  } else if(action.value==="attendance"){
+    marksBox.style.display="none";
+    attBox.style.display="block";
+  }
+}
+
+// GENERATE MARKS
+function generateMarks(){
+  fieldsArea.innerHTML="";
+  subjects=[];
+
+  for(let i=0;i<numSubjects.value;i++){
+    fieldsArea.innerHTML += `
+      <label>Subject Name</label>
+      <input id="sub${i}" placeholder="Subject Name">
+
+      <label>Marks</label>
+      <input id="mark${i}" placeholder="Marks">
+    `;
+  }
+}
+
+// ✅ FIXED ATTENDANCE
+function generateAttendance(){
+  fieldsArea.innerHTML="";
+  attendance=[];
+
+  // SUBJECT-WISE ATTENDED ONLY
+  for(let i=0;i<numAtt.value;i++){
+    fieldsArea.innerHTML += `
+      <label>Subject Name</label>
+      <input id="attSub${i}" placeholder="Subject Name">
+
+      <label>Attended</label>
+      <input id="attend${i}" placeholder="Attended">
+    `;
+  }
+
+  // ✅ OVERALL ATTENDANCE (ONLY ONCE)
+  fieldsArea.innerHTML += `
+    <hr>
+    <label><b>Overall Attendance (Total Classes)</b></label>
+    <input id="overallTotal" placeholder="Enter Total Classes">
+  `;
+}
+
+// SUBMIT DATA
+function submitData(){
+
+  subjects=[]; 
+  attendance=[];
+
+  // MARKS
+  if(action.value==="marks"){
+    for(let i=0;i<numSubjects.value;i++){
+      subjects.push({
+        name: document.getElementById("sub"+i).value,
+        mark: +document.getElementById("mark"+i).value
+      });
+    }
+  }
+
+  // ✅ ATTENDANCE FIXED LOGIC
+  if(action.value==="attendance"){
+
+    const total = +document.getElementById("overallTotal").value;
+
+    for(let i=0;i<numAtt.value;i++){
+      attendance.push({
+        name: document.getElementById("attSub"+i).value,
+        attended: +document.getElementById("attend"+i).value,
+        total: total
+      });
+    }
+  }
+
+  // API CALL
+  fetch("http://localhost:5000/saveStudent",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      name:"Student",
+      roll: roll.value,
+      data:{
+        semester: semester.value,
+        subjects: subjects,
+        attendance: attendance
+      }
+    })
+  })
+  .then(res=>res.text())
+  .then(msg=>alert(msg));
+}
+
+</script>
+
+</body>
+</html>
+
